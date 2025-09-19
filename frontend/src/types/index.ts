@@ -21,7 +21,7 @@ export interface HistoricalDataPoint {
   sampleCount?: number;
 }
 
-export type TimePeriod = '24h' | '1w' | '1m';
+export type TimePeriod = '1h' | '6h' | '12h';
 
 export interface HistoryStatistics {
   temperature: { min: number; max: number; avg: number };

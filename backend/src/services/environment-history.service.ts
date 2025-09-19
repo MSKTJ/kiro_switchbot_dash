@@ -8,7 +8,7 @@ import { EnvironmentData } from '../models/environment';
 /**
  * Time period options for data retrieval
  */
-export type TimePeriod = '24h' | '1w' | '1m';
+export type TimePeriod = '1h' | '6h' | '12h';
 
 /**
  * Historical data point with aggregated values
@@ -47,7 +47,7 @@ export class EnvironmentHistoryService {
   constructor(config: Partial<HistoryConfig> = {}) {
     this.config = {
       maxDataPoints: config.maxDataPoints || 8640, // ~30 days at 5min intervals
-      aggregationInterval: config.aggregationInterval || 5, // 5 minutes
+      aggregationInterval: config.aggregationInterval || (process.env.NODE_ENV === 'development' ? 0.1 : 2), // 6 seconds in dev, 2 minutes in prod
       retentionPeriod: config.retentionPeriod || 24 * 30 // 30 days
     };
   }
@@ -70,9 +70,13 @@ export class EnvironmentHistoryService {
 
     if (shouldAggregate && lastPoint) {
       // Aggregate with the last point
+      const timeDiff = (data.timestamp.getTime() - lastPoint.timestamp.getTime()) / (1000 * 60);
+      console.log(`Aggregating data point at ${data.timestamp.toISOString()} with last point at ${lastPoint.timestamp.toISOString()} (${timeDiff.toFixed(1)} min diff, threshold: ${this.config.aggregationInterval} min)`);
       this.aggregateDataPoint(lastPoint, historicalPoint);
     } else {
       // Add as new point
+      const timeDiff = lastPoint ? (data.timestamp.getTime() - lastPoint.timestamp.getTime()) / (1000 * 60) : 0;
+      console.log(`Adding new data point at ${data.timestamp.toISOString()}. Total points: ${this.dataPoints.length + 1}. Time diff: ${timeDiff.toFixed(1)} min`);
       this.dataPoints.push(historicalPoint);
     }
 
@@ -93,23 +97,26 @@ export class EnvironmentHistoryService {
     let startTime: Date;
 
     switch (period) {
-      case '24h':
-        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      case '1h':
+        startTime = new Date(now.getTime() - 1 * 60 * 60 * 1000);
         break;
-      case '1w':
-        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case '6h':
+        startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
         break;
-      case '1m':
-        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case '12h':
+        startTime = new Date(now.getTime() - 12 * 60 * 60 * 1000);
         break;
       default:
-        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        startTime = new Date(now.getTime() - 1 * 60 * 60 * 1000);
     }
 
     // Filter data points within the time period
     const filteredData = this.dataPoints.filter(
       point => point.timestamp >= startTime && point.timestamp <= now
     );
+
+    console.log(`Getting historical data for ${period}: ${filteredData.length} points found between ${startTime.toISOString()} and ${now.toISOString()}`);
+    console.log(`Total data points in memory: ${this.dataPoints.length}`);
 
     // For longer periods, we might want to further aggregate the data
     return this.optimizeDataForPeriod(filteredData, period);

@@ -19,7 +19,7 @@ export interface UseEnvironmentHistoryReturn {
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
-export const useEnvironmentHistory = (initialPeriod: TimePeriod = '24h'): UseEnvironmentHistoryReturn => {
+export const useEnvironmentHistory = (initialPeriod: TimePeriod = '1h'): UseEnvironmentHistoryReturn => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(initialPeriod);
   const [historyState, setHistoryState] = useState<HistoryState>({
     data: [],
@@ -106,7 +106,7 @@ export const useEnvironmentHistory = (initialPeriod: TimePeriod = '24h'): UseEnv
 
   // Auto-refresh data periodically (every 5 minutes for current data)
   useEffect(() => {
-    if (selectedPeriod === '24h') {
+    if (selectedPeriod === '1h') {
       const interval = setInterval(() => {
         fetchHistoryData(selectedPeriod);
       }, 5 * 60 * 1000); // 5 minutes

@@ -93,62 +93,64 @@ describe('EnvironmentHistoryService', () => {
   });
 
   describe('getHistoricalData', () => {
-    it('should return data for 24h period', () => {
+    it('should return data for 1h period', () => {
       const testService = new EnvironmentHistoryService({
         maxDataPoints: 100,
-        aggregationInterval: 1000, // Very large interval to disable aggregation
+        aggregationInterval: 0, // Disable aggregation
         retentionPeriod: 24 * 31
       });
 
-      // Add test data within 24h period
+      // Add test data within 1h period
       const now = new Date();
       const testData = [
-        { hours: 1, temp: 25.0, humidity: 60, light: 800 },
-        { hours: 6, temp: 24.5, humidity: 58, light: 750 },
-        { hours: 12, temp: 26.0, humidity: 62, light: 900 },
-        { hours: 20, temp: 23.5, humidity: 55, light: 700 }
+        { minutes: 10, temp: 25.0, humidity: 60, light: 800 },
+        { minutes: 20, temp: 24.5, humidity: 58, light: 750 },
+        { minutes: 30, temp: 26.0, humidity: 62, light: 900 },
+        { minutes: 50, temp: 23.5, humidity: 55, light: 700 }
       ];
 
-      testData.forEach(({ hours, temp, humidity, light }) => {
+      // Add data points in chronological order (oldest first)
+      testData.reverse().forEach(({ minutes, temp, humidity, light }) => {
         const data: EnvironmentData = {
           temperature: temp,
           humidity,
           light,
-          timestamp: new Date(now.getTime() - hours * 60 * 60 * 1000)
+          timestamp: new Date(now.getTime() - minutes * 60 * 1000)
         };
         testService.addDataPoint(data);
       });
 
-      const data = testService.getHistoricalData('24h');
+      const data = testService.getHistoricalData('1h');
       expect(data.length).toBe(4);
       
-      // All data points should be within last 24 hours
-      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      // All data points should be within last 1 hour
+      const hourAgo = new Date(now.getTime() - 1 * 60 * 60 * 1000);
       
       data.forEach(point => {
-        expect(point.timestamp.getTime()).toBeGreaterThanOrEqual(dayAgo.getTime());
+        expect(point.timestamp.getTime()).toBeGreaterThanOrEqual(hourAgo.getTime());
       });
     });
 
 
 
-    it('should return data for 1w period', () => {
+    it('should return data for 6h period', () => {
       const testService = new EnvironmentHistoryService({
         maxDataPoints: 100,
-        aggregationInterval: 1000,
+        aggregationInterval: 0,
         retentionPeriod: 24 * 31
       });
 
-      // Add test data within 1w period
+      // Add test data within 6h period
       const now = new Date();
       const testData = [
         { hours: 1, temp: 25.0, humidity: 60, light: 800 },
-        { hours: 24, temp: 24.5, humidity: 58, light: 750 },
-        { hours: 72, temp: 26.0, humidity: 62, light: 900 },
-        { hours: 120, temp: 23.5, humidity: 55, light: 700 }
+        { hours: 2, temp: 24.5, humidity: 58, light: 750 },
+        { hours: 4, temp: 26.0, humidity: 62, light: 900 },
+        { hours: 5, temp: 23.5, humidity: 55, light: 700 }
       ];
 
-      testData.forEach(({ hours, temp, humidity, light }) => {
+      // Add data points in chronological order (oldest first)
+      testData.reverse().forEach(({ hours, temp, humidity, light }) => {
         const data: EnvironmentData = {
           temperature: temp,
           humidity,
@@ -158,34 +160,35 @@ describe('EnvironmentHistoryService', () => {
         testService.addDataPoint(data);
       });
 
-      const data = testService.getHistoricalData('1w');
+      const data = testService.getHistoricalData('6h');
       expect(data.length).toBe(4);
       
-      // All data points should be within last week
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      // All data points should be within last 6 hours
+      const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
       
       data.forEach(point => {
-        expect(point.timestamp.getTime()).toBeGreaterThanOrEqual(weekAgo.getTime());
+        expect(point.timestamp.getTime()).toBeGreaterThanOrEqual(sixHoursAgo.getTime());
       });
     });
 
-    it('should return data for 1m period', () => {
+    it('should return data for 12h period', () => {
       const testService = new EnvironmentHistoryService({
         maxDataPoints: 100,
-        aggregationInterval: 1000,
+        aggregationInterval: 0,
         retentionPeriod: 24 * 31
       });
 
-      // Add test data within 1m period
+      // Add test data within 12h period
       const now = new Date();
       const testData = [
         { hours: 1, temp: 25.0, humidity: 60, light: 800 },
-        { hours: 168, temp: 24.5, humidity: 58, light: 750 }, // 1 week
-        { hours: 336, temp: 26.0, humidity: 62, light: 900 }, // 2 weeks
-        { hours: 600, temp: 23.5, humidity: 55, light: 700 }  // 25 days
+        { hours: 3, temp: 24.5, humidity: 58, light: 750 },
+        { hours: 6, temp: 26.0, humidity: 62, light: 900 },
+        { hours: 10, temp: 23.5, humidity: 55, light: 700 }
       ];
 
-      testData.forEach(({ hours, temp, humidity, light }) => {
+      // Add data points in chronological order (oldest first)
+      testData.reverse().forEach(({ hours, temp, humidity, light }) => {
         const data: EnvironmentData = {
           temperature: temp,
           humidity,
@@ -195,14 +198,14 @@ describe('EnvironmentHistoryService', () => {
         testService.addDataPoint(data);
       });
 
-      const data = testService.getHistoricalData('1m');
+      const data = testService.getHistoricalData('12h');
       expect(data.length).toBe(4);
       
-      // All data points should be within last month
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      // All data points should be within last 12 hours
+      const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
       
       data.forEach(point => {
-        expect(point.timestamp.getTime()).toBeGreaterThanOrEqual(monthAgo.getTime());
+        expect(point.timestamp.getTime()).toBeGreaterThanOrEqual(twelveHoursAgo.getTime());
       });
     });
   });
@@ -211,7 +214,7 @@ describe('EnvironmentHistoryService', () => {
     it('should calculate correct statistics', () => {
       const testService = new EnvironmentHistoryService({
         maxDataPoints: 100,
-        aggregationInterval: 1000,
+        aggregationInterval: 0,
         retentionPeriod: 24 * 31
       });
 
@@ -223,17 +226,18 @@ describe('EnvironmentHistoryService', () => {
         { temp: 30.0, humidity: 60, light: 1000 }
       ];
 
-      testValues.forEach((values, index) => {
+      // Add data points in chronological order (oldest first)
+      testValues.reverse().forEach((values, index) => {
         const data: EnvironmentData = {
           temperature: values.temp,
           humidity: values.humidity,
           light: values.light,
-          timestamp: new Date(now.getTime() - index * 2 * 60 * 60 * 1000) // 2 hours apart to avoid aggregation
+          timestamp: new Date(now.getTime() - (testValues.length - 1 - index) * 10 * 60 * 1000) // 10 minutes apart
         };
         testService.addDataPoint(data);
       });
 
-      const stats = testService.getDataStatistics('24h');
+      const stats = testService.getDataStatistics('1h');
       
       expect(stats).toBeTruthy();
       expect(stats!.temperature.min).toBe(20.0);
@@ -253,7 +257,7 @@ describe('EnvironmentHistoryService', () => {
 
     it('should return null for empty data', () => {
       const emptyService = new EnvironmentHistoryService();
-      const stats = emptyService.getDataStatistics('24h');
+      const stats = emptyService.getDataStatistics('1h');
       expect(stats).toBeNull();
     });
   });
@@ -321,7 +325,7 @@ describe('EnvironmentHistoryService', () => {
         temperature: 20.0,
         humidity: 40,
         light: 500,
-        timestamp: new Date(now.getTime() - 25 * 60 * 60 * 1000) // 25 hours ago (beyond 24h retention)
+        timestamp: new Date(now.getTime() - 25 * 60 * 60 * 1000) // 25 hours ago (beyond retention)
       };
       testService.addDataPoint(oldData);
 

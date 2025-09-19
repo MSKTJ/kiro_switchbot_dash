@@ -62,7 +62,7 @@ export class WebSocketService {
   constructor(io: SocketIOServer, config: Partial<WebSocketConfig> = {}) {
     this.io = io;
     this.config = {
-      updateInterval: config.updateInterval || 10000, // 10 seconds default
+      updateInterval: config.updateInterval || (process.env.NODE_ENV === 'development' ? 5000 : 10000), // 5 seconds in dev, 10 seconds in prod
       maxRetries: config.maxRetries || 3,
       retryDelay: config.retryDelay || 5000 // 5 seconds
     };
@@ -273,6 +273,26 @@ export class WebSocketService {
       console.error('Failed to fetch environment data for broadcast:', error);
       
       this.retryCount++;
+      
+      // In development mode, use mock data when real API fails
+      if (process.env.NODE_ENV === 'development' && this.retryCount <= this.config.maxRetries) {
+        console.log('Using mock data for development...');
+        const mockData = environmentService.generateMockData();
+        this.lastEnvironmentData = mockData;
+        
+        // Add to history
+        environmentHistoryService.addDataPoint(mockData);
+        
+        // Check for alerts
+        const currentAlerts = alertService.checkEnvironmentData(mockData);
+        
+        // Broadcast mock data to all subscribed clients
+        this.broadcastToSubscribedClients('environmentUpdate', mockData);
+        this.broadcastToSubscribedClients('alertUpdate', currentAlerts);
+        
+        console.log(`Mock environment data broadcasted to ${this.getSubscribedClientCount()} clients`);
+        return;
+      }
       
       // Broadcast error to subscribed clients
       const errorMessage = error instanceof EnvironmentServiceError 

@@ -113,6 +113,36 @@ export class EnvironmentService {
   }
 
   /**
+   * Generate mock environment data for development
+   */
+  generateMockData(): EnvironmentData {
+    const now = new Date();
+    const timeOfDay = now.getHours() + now.getMinutes() / 60;
+    
+    // Simulate realistic temperature variation throughout the day
+    const baseTemp = 22 + Math.sin((timeOfDay - 6) * Math.PI / 12) * 4; // Peak at 2 PM
+    const temperature = baseTemp + (Math.random() - 0.5) * 2;
+    
+    // Simulate humidity (inverse correlation with temperature)
+    const baseHumidity = 65 - (temperature - 20) * 2;
+    const humidity = Math.max(30, Math.min(80, baseHumidity + (Math.random() - 0.5) * 10));
+    
+    // Simulate light levels (higher during day, lower at night)
+    let baseLight = 100;
+    if (timeOfDay >= 6 && timeOfDay <= 18) {
+      baseLight = 300 + Math.sin((timeOfDay - 6) * Math.PI / 12) * 400; // Peak at noon
+    }
+    const light = Math.max(0, baseLight + (Math.random() - 0.5) * 100);
+    
+    return {
+      temperature: Math.round(temperature * 10) / 10,
+      humidity: Math.round(humidity),
+      light: Math.round(light),
+      timestamp: now
+    };
+  }
+
+  /**
    * Test if environment service is working properly
    */
   async testConnection(): Promise<boolean> {

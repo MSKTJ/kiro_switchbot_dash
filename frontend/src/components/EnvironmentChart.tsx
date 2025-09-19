@@ -35,7 +35,7 @@ export interface HistoricalDataPoint {
   sampleCount?: number;
 }
 
-export type TimePeriod = '24h' | '1w' | '1m';
+export type TimePeriod = '1h' | '6h' | '12h';
 
 interface EnvironmentChartProps {
   data: HistoricalDataPoint[];
@@ -106,11 +106,13 @@ const EnvironmentChart: React.FC<EnvironmentChartProps> = ({
         type: 'time',
         time: {
           displayFormats: {
+            minute: 'HH:mm',
             hour: 'HH:mm',
-            day: 'MM/dd',
+            day: 'MM/dd HH:mm',
             week: 'MM/dd',
             month: 'MM/dd'
-          }
+          },
+          unit: getTimeUnit(selectedPeriod)
         },
         grid: {
           color: '#374151', // border-gray-700
@@ -167,9 +169,9 @@ const EnvironmentChart: React.FC<EnvironmentChartProps> = ({
 
   // Period selection buttons
   const periodButtons: { value: TimePeriod; label: string }[] = [
-    { value: '24h', label: '24時間' },
-    { value: '1w', label: '1週間' },
-    { value: '1m', label: '1ヶ月' }
+    { value: '1h', label: '1時間' },
+    { value: '6h', label: '6時間' },
+    { value: '12h', label: '12時間' }
   ];
 
   // Metric selection buttons
@@ -290,7 +292,7 @@ const EnvironmentChart: React.FC<EnvironmentChartProps> = ({
 // Helper functions
 function getChartTitle(metric: string, period: TimePeriod): string {
   const metricName = getMetricLabel(metric);
-  const periodName = period === '24h' ? '24時間' : period === '1w' ? '1週間' : '1ヶ月';
+  const periodName = period === '1h' ? '1時間' : period === '6h' ? '6時間' : '12時間';
   return `${metricName} - ${periodName}`;
 }
 
@@ -319,6 +321,18 @@ function getMetricColor(metric: string, alpha: number = 1): string {
     light: alpha === 1 ? '#F59E0B' : `rgba(245, 158, 11, ${alpha})`       // amber-500
   };
   return colors[metric as keyof typeof colors] || '#6B7280';
+}
+
+function getTimeUnit(period: TimePeriod): 'minute' | 'hour' | 'day' {
+  switch (period) {
+    case '1h':
+      return 'minute';
+    case '6h':
+    case '12h':
+      return 'hour';
+    default:
+      return 'hour';
+  }
 }
 
 export default EnvironmentChart;
