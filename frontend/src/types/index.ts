@@ -31,26 +31,82 @@ export interface HistoryStatistics {
 }
 
 // Device Types
+export type DeviceType = 'Light' | 'Air Conditioner' | 'Hub' | 'Bot' | 'Curtain' | 'Plug' | 'Unknown';
+export type DeviceStatus = 'online' | 'offline' | 'unknown';
+
 export interface Device {
   deviceId: string;
   deviceName: string;
-  deviceType: 'Light' | 'Air Conditioner' | 'Hub';
-  status: 'online' | 'offline';
-  properties: DeviceProperties;
+  deviceType: DeviceType;
+  status: DeviceStatus;
+  hubDeviceId?: string;
+  enableCloudService?: boolean;
+  isInfraredRemote?: boolean;
+  remoteType?: string;
+  properties?: DeviceProperties;
+  lastUpdated: string;
 }
 
 export interface LightProperties {
   power: 'on' | 'off';
   brightness?: number;
+  colorTemperature?: number;
+  color?: {
+    red: number;
+    green: number;
+    blue: number;
+  };
 }
 
 export interface AirConditionerProperties {
   power: 'on' | 'off';
-  mode: 'cool' | 'heat' | 'dry' | 'auto';
+  mode: 'cool' | 'heat' | 'dry' | 'auto' | 'fan';
   temperature: number;
+  fanSpeed: 'auto' | 'low' | 'medium' | 'high';
 }
 
-export type DeviceProperties = LightProperties | AirConditionerProperties;
+export interface HubProperties {
+  temperature?: number;
+  humidity?: number;
+  lightLevel?: number;
+  version?: string;
+}
+
+export interface BotProperties {
+  power: 'on' | 'off';
+  battery?: number;
+}
+
+export interface CurtainProperties {
+  position: number;
+  battery?: number;
+  calibrate?: boolean;
+}
+
+export interface PlugProperties {
+  power: 'on' | 'off';
+  voltage?: number;
+  current?: number;
+  power_consumption?: number;
+}
+
+export type DeviceProperties = LightProperties | AirConditionerProperties | HubProperties | BotProperties | CurtainProperties | PlugProperties;
+
+// Device API Response Types
+export interface DeviceListResponse {
+  devices: Device[];
+  total: number;
+  timestamp: string;
+}
+
+export interface DeviceStatistics {
+  total: number;
+  online: number;
+  offline: number;
+  unknown: number;
+  controllable: number;
+  byType: Record<DeviceType, number>;
+}
 
 // Settings Types
 export interface AppSettings {

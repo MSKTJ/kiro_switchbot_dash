@@ -6,6 +6,7 @@ import { config } from './config';
 import { validateSwitchBotCredentials } from './utils/switchbot-auth';
 import { environmentRoutes } from './routes/environment.routes';
 import { alertRoutes } from './routes/alert.routes';
+import { deviceRoutes } from './routes/device.routes';
 import { WebSocketService } from './services/websocket.service';
 
 const app = express();
@@ -66,6 +67,9 @@ app.use('/api/environment', environmentRoutes);
 
 // Alert routes
 app.use('/api/alerts', alertRoutes);
+
+// Device routes
+app.use('/api/devices', deviceRoutes);
 
 // WebSocket status endpoint
 app.get('/api/websocket/status', (req, res) => {
