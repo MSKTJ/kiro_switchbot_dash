@@ -183,23 +183,23 @@ const LightControl = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={() => handleSetPower('off')}
-              disabled={isControlling || disabled || !isPoweredOn}
+              disabled={isControlling || disabled || device.status !== 'online'}
               className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                !isPoweredOn
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
-              } ${isControlling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                isPoweredOn && device.status === 'online'
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : 'bg-gray-600 text-gray-400'
+              } ${isControlling || device.status !== 'online' ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               OFF
             </button>
             <button
               onClick={() => handleSetPower('on')}
-              disabled={isControlling || disabled || isPoweredOn}
+              disabled={isControlling || disabled || device.status !== 'online'}
               className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                isPoweredOn
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
-              } ${isControlling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                !isPoweredOn && device.status === 'online'
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : 'bg-gray-600 text-gray-400'
+              } ${isControlling || device.status !== 'online' ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               ON
             </button>
@@ -211,10 +211,10 @@ const LightControl = ({
           <span className="text-sm text-gray-300">トグルスイッチ</span>
           <button
             onClick={handleTogglePower}
-            disabled={isControlling || disabled}
+            disabled={isControlling || disabled || device.status !== 'online'}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
               isPoweredOn ? 'bg-blue-600' : 'bg-gray-600'
-            } ${isControlling || disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            } ${isControlling || disabled || device.status !== 'online' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -240,9 +240,9 @@ const LightControl = ({
               max="100"
               value={currentBrightness}
               onChange={handleBrightnessChange}
-              disabled={isControlling || disabled || !isPoweredOn}
+              disabled={isControlling || disabled || device.status !== 'online'}
               className={`w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider ${
-                isControlling || disabled || !isPoweredOn ? 'opacity-50 cursor-not-allowed' : ''
+                isControlling || disabled || device.status !== 'online' ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               style={{
                 background: isPoweredOn 
@@ -257,12 +257,12 @@ const LightControl = ({
                 <button
                   key={brightness}
                   onClick={() => handleSetBrightness(brightness)}
-                  disabled={isControlling || disabled || !isPoweredOn}
+                  disabled={isControlling || disabled || device.status !== 'online'}
                   className={`px-2 py-1 rounded text-xs transition-colors ${
                     currentBrightness === brightness
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  } ${isControlling || disabled || !isPoweredOn ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${isControlling || disabled || device.status !== 'online' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {brightness}%
                 </button>

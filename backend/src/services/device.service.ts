@@ -78,6 +78,9 @@ export class DeviceService {
       for (const rawDevice of response.body.infraredRemoteList) {
         const validation = DeviceValidator.validateInfraredRemoteDevice(rawDevice);
         if (validation.isValid && validation.device) {
+          // Set default properties for IR devices
+          validation.device.properties = this.getDefaultPropertiesForIRDevice(validation.device.deviceType);
+          validation.device.status = 'online'; // Assume IR devices are online if they exist
           devices.push(validation.device);
         } else {
           validationErrors.push(`IR Device ${rawDevice.deviceId}: ${validation.errors.join(', ')}`);
@@ -169,6 +172,25 @@ export class DeviceService {
     try {
       const device = await this.getDeviceById(deviceId);
       
+      // For infrared remote devices, we cannot get real status from API
+      // Set default properties and mark as online if it's a known controllable device
+      if (device.isInfraredRemote) {
+        console.log(`IR device detected: ${device.deviceName} (${deviceId}). Setting default properties.`);
+        
+        // Set default properties based on device type
+        device.properties = this.getDefaultPropertiesForIRDevice(device.deviceType);
+        device.status = 'online'; // Assume IR devices are online if they exist
+        device.lastUpdated = new Date();
+        
+        // Update device in cache
+        const deviceIndex = this.devices.findIndex(d => d.deviceId === deviceId);
+        if (deviceIndex >= 0) {
+          this.devices[deviceIndex] = device;
+        }
+        
+        return device;
+      }
+      
       console.log(`Updating status for device: ${device.deviceName} (${deviceId})`);
       const statusResponse = await switchBotAPI.getDeviceStatus(deviceId);
       
@@ -226,7 +248,17 @@ export class DeviceService {
         );
       }
       
-      await switchBotAPI.sendDeviceCommand(deviceId, command, parameter);
+      // Map commands for IR devices to supported API commands
+      const { mappedCommand, mappedParameter } = device.isInfraredRemote 
+        ? this.mapIRDeviceCommand(device.deviceType, command, parameter)
+        : { mappedCommand: command, mappedParameter: parameter };
+      
+      await switchBotAPI.sendDeviceCommand(deviceId, mappedCommand, mappedParameter);
+      
+      // For IR devices, update local state based on original command since we can't get real status
+      if (device.isInfraredRemote) {
+        this.updateIRDeviceLocalState(device, command, parameter);
+      }
       
       // Update device status after successful control
       setTimeout(() => {
@@ -378,6 +410,125 @@ export class DeviceService {
       lightLevel: statusBody.lightLevel || undefined,
       version: statusBody.version || undefined
     };
+  }
+
+  /**
+   * Get default properties for infrared remote devices
+   */
+  private getDefaultPropertiesForIRDevice(deviceType: DeviceType): any {
+    switch (deviceType) {
+      case 'Light':
+        return {
+          power: 'off',
+          brightness: 50
+        } as LightProperties;
+      case 'Air Conditioner':
+        return {
+          power: 'off',
+          mode: 'auto',
+          temperature: 25,
+          fanSpeed: 'auto'
+        } as AirConditionerProperties;
+      default:
+        return {};
+    }
+  }
+
+  /**
+   * Map commands for IR devices to supported API commands
+   */
+  private mapIRDeviceCommand(deviceType: DeviceType, command: string, parameter?: any): { mappedCommand: string; mappedParameter?: any } {
+    switch (deviceType) {
+      case 'Light':
+        switch (command) {
+          case 'turnOn':
+            return { mappedCommand: 'turnOn' };
+          case 'turnOff':
+            return { mappedCommand: 'turnOff' };
+          case 'setBrightness':
+            // For IR lights, we can't set exact brightness, so we use brightnessUp/Down
+            // This is a simplified approach - in reality, you might need multiple commands
+            const brightness = parseInt(parameter);
+            if (brightness > 50) {
+              return { mappedCommand: 'brightnessUp' };
+            } else {
+              return { mappedCommand: 'brightnessDown' };
+            }
+          default:
+            return { mappedCommand: command, mappedParameter: parameter };
+        }
+      case 'Air Conditioner':
+        switch (command) {
+          case 'turnOn':
+            return { mappedCommand: 'turnOn' };
+          case 'turnOff':
+            return { mappedCommand: 'turnOff' };
+          case 'setMode':
+            return { mappedCommand: parameter }; // Mode is the command for AC IR
+          case 'setTemperature':
+            return { mappedCommand: 'setAll', mappedParameter: `${parameter},1,1` }; // temp,mode,fanSpeed
+          default:
+            return { mappedCommand: command, mappedParameter: parameter };
+        }
+      default:
+        return { mappedCommand: command, mappedParameter: parameter };
+    }
+  }
+
+  /**
+   * Update local state for IR devices based on control commands
+   */
+  private updateIRDeviceLocalState(device: Device, command: string, parameter?: any): void {
+    if (!device.properties) {
+      device.properties = this.getDefaultPropertiesForIRDevice(device.deviceType);
+    }
+
+    switch (device.deviceType) {
+      case 'Light':
+        const lightProps = device.properties as LightProperties;
+        switch (command) {
+          case 'turnOn':
+            lightProps.power = 'on';
+            break;
+          case 'turnOff':
+            lightProps.power = 'off';
+            break;
+          case 'setBrightness':
+            if (parameter !== undefined) {
+              lightProps.brightness = parseInt(parameter);
+              lightProps.power = 'on'; // Assume turning on when setting brightness
+            }
+            break;
+        }
+        break;
+
+      case 'Air Conditioner':
+        const acProps = device.properties as AirConditionerProperties;
+        switch (command) {
+          case 'turnOn':
+            acProps.power = 'on';
+            break;
+          case 'turnOff':
+            acProps.power = 'off';
+            break;
+          case 'setMode':
+            if (parameter) {
+              acProps.mode = parameter;
+              acProps.power = 'on'; // Assume turning on when setting mode
+            }
+            break;
+          case 'setTemperature':
+            if (parameter !== undefined) {
+              acProps.temperature = parseInt(parameter);
+              acProps.power = 'on'; // Assume turning on when setting temperature
+            }
+            break;
+        }
+        break;
+    }
+
+    device.lastUpdated = new Date();
+    console.log(`Updated local state for IR device ${device.deviceName}:`, device.properties);
   }
 }
 
