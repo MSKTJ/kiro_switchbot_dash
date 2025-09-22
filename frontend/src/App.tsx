@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Dashboard from './components/Dashboard';
 import DeviceList from './components/DeviceList';
+import Settings from './components/Settings';
 import { useDevices } from './hooks/useDevices';
 
 type ActiveView = 'dashboard' | 'devices' | 'settings';
@@ -123,14 +124,7 @@ function App() {
           </div>
         );
       case 'settings':
-        return (
-          <div className="container mx-auto px-4 py-6">
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">設定</h2>
-              <p className="text-gray-400">設定機能は開発中です。</p>
-            </div>
-          </div>
-        );
+        return <Settings />;
       default:
         return <Dashboard onDeviceSelect={handleDeviceSelect} />;
     }

@@ -6,6 +6,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import { environmentService, EnvironmentServiceError } from './environment.service';
 import { environmentHistoryService, TimePeriod, HistoricalDataPoint } from './environment-history.service';
 import { alertService } from './alert.service';
+import { settingsService } from './settings.service';
 import { EnvironmentData } from '../models/environment';
 import { Alert } from '../models/alert';
 
@@ -209,17 +210,21 @@ export class WebSocketService {
   private startPeriodicUpdates(): void {
     if (this.isRunning) return;
 
-    console.log(`Starting periodic environment updates (interval: ${this.config.updateInterval}ms)`);
+    // Get current update interval from settings (in seconds, convert to milliseconds)
+    const updateIntervalSeconds = settingsService.getDataUpdateInterval();
+    const updateIntervalMs = updateIntervalSeconds * 1000;
+
+    console.log(`Starting periodic environment updates (interval: ${updateIntervalMs}ms / ${updateIntervalSeconds}s)`);
     this.isRunning = true;
     this.retryCount = 0;
 
     // Fetch initial data immediately
     this.fetchAndBroadcastEnvironmentData();
 
-    // Set up periodic updates
+    // Set up periodic updates with current settings
     this.updateTimer = setInterval(() => {
       this.fetchAndBroadcastEnvironmentData();
-    }, this.config.updateInterval);
+    }, updateIntervalMs);
   }
 
   /**
@@ -342,14 +347,32 @@ export class WebSocketService {
    * Get WebSocket service status
    */
   public getStatus() {
+    const currentUpdateInterval = settingsService.getDataUpdateInterval() * 1000;
+    
     return {
       isRunning: this.isRunning,
       connectedClients: this.clients.size,
       subscribedClients: this.getSubscribedClientCount(),
-      updateInterval: this.config.updateInterval,
+      updateInterval: currentUpdateInterval,
       retryCount: this.retryCount,
       lastUpdate: this.lastEnvironmentData?.timestamp?.toISOString() || null
     };
+  }
+
+  /**
+   * Restart periodic updates with new settings
+   */
+  public restartWithNewSettings(): void {
+    console.log('Restarting WebSocket service with new settings');
+    
+    if (this.isRunning) {
+      this.stopPeriodicUpdates();
+      
+      // Restart if there are subscribed clients
+      if (this.getSubscribedClientCount() > 0) {
+        this.startPeriodicUpdates();
+      }
+    }
   }
 
   /**

@@ -4,6 +4,7 @@
 
 import { Alert, AlertThresholds, AlertGenerator, AlertThresholdValidator, DEFAULT_ALERT_THRESHOLDS } from '../models/alert';
 import { EnvironmentData } from '../models/environment';
+import { settingsService } from './settings.service';
 
 /**
  * Alert service error class
@@ -29,10 +30,27 @@ export class AlertService {
   private readonly MAX_HISTORY_SIZE = 100;
 
   /**
+   * Get current alert thresholds from settings
+   */
+  private getCurrentThresholdsFromSettings(): AlertThresholds {
+    const settings = settingsService.getSettings();
+    return {
+      temperature: {
+        min: settings.alertThresholds.temperature.min,
+        max: settings.alertThresholds.temperature.max
+      },
+      humidity: {
+        min: settings.alertThresholds.humidity.min,
+        max: settings.alertThresholds.humidity.max
+      }
+    };
+  }
+
+  /**
    * Get current alert thresholds
    */
   getThresholds(): AlertThresholds {
-    return { ...this.thresholds };
+    return this.getCurrentThresholdsFromSettings();
   }
 
   /**
@@ -56,8 +74,11 @@ export class AlertService {
    */
   checkEnvironmentData(environmentData: EnvironmentData): Alert[] {
     try {
+      // Get current thresholds from settings
+      const currentThresholds = this.getCurrentThresholdsFromSettings();
+      
       // Generate new alerts based on current data
-      const newAlerts = AlertGenerator.generateAlerts(environmentData, this.thresholds);
+      const newAlerts = AlertGenerator.generateAlerts(environmentData, currentThresholds);
       
       // Update active alerts
       this.updateActiveAlerts(newAlerts, environmentData);

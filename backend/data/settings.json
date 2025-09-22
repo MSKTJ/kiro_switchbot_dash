@@ -1,0 +1,17 @@
+{
+  "dataUpdateInterval": 30,
+  "alertThresholds": {
+    "temperature": {
+      "min": 18,
+      "max": 28
+    },
+    "humidity": {
+      "min": 30,
+      "max": 70
+    }
+  },
+  "notifications": {
+    "enabled": true,
+    "sound": true
+  }
+}
