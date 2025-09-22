@@ -2,7 +2,7 @@
  * Device list component for displaying all devices
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Device, DeviceType, DeviceStatus } from '../types';
 import DeviceCard from './DeviceCard';
 
@@ -14,6 +14,13 @@ interface DeviceListProps {
   onStatusUpdate?: (deviceId: string) => Promise<void>;
   onTest?: (deviceId: string) => Promise<boolean>;
   onRefresh?: () => void;
+  selectedDeviceId?: string | null;
+  onDeviceSelect?: (deviceId: string | null) => void;
+  irDeviceStates?: Record<string, {
+    power: 'on' | 'off';
+    brightness?: number;
+    colorTemp?: number;
+  }>;
 }
 
 interface DeviceFilters {
@@ -29,7 +36,10 @@ const DeviceList = ({
   onControl,
   onStatusUpdate,
   onTest,
-  onRefresh
+  onRefresh,
+  selectedDeviceId,
+  onDeviceSelect,
+  irDeviceStates = {}
 }: DeviceListProps) => {
   const [filters, setFilters] = useState<DeviceFilters>({
     type: 'all',
@@ -37,6 +47,17 @@ const DeviceList = ({
     controllableOnly: false
   });
   const [controllingDevices, setControllingDevices] = useState<Set<string>>(new Set());
+  const selectedDeviceRef = useRef<HTMLDivElement>(null);
+
+  // 選択されたデバイスまでスクロール
+  useEffect(() => {
+    if (selectedDeviceId && selectedDeviceRef.current) {
+      selectedDeviceRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  }, [selectedDeviceId]);
 
   const deviceTypes: (DeviceType | 'all')[] = [
     'all', 'Light', 'Air Conditioner', 'Hub', 'Bot', 'Curtain', 'Plug', 'Unknown'
@@ -95,10 +116,12 @@ const DeviceList = ({
   const handleControl = async (deviceId: string, command: string, parameter?: any): Promise<boolean> => {
     if (!onControl) return false;
 
+    console.log(`DeviceList: Controlling device ${deviceId}: ${command}`, parameter);
     setControllingDevices(prev => new Set(prev).add(deviceId));
     
     try {
       const success = await onControl(deviceId, command, parameter);
+      console.log(`DeviceList: Control result for ${deviceId}:`, success);
       return success;
     } finally {
       setControllingDevices(prev => {
@@ -163,25 +186,40 @@ const DeviceList = ({
           <h2 className="text-xl font-semibold text-white">デバイス一覧</h2>
           <p className="text-sm text-gray-400 mt-1">
             {filteredDevices.length} / {devices.length} デバイス
+            {selectedDeviceId && (
+              <span className="ml-2 text-blue-400">
+                • {devices.find(d => d.deviceId === selectedDeviceId)?.deviceName || '不明'} を選択中
+              </span>
+            )}
           </p>
         </div>
-        {onRefresh && (
-          <button
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="btn-secondary flex items-center space-x-2"
-          >
-            <svg 
-              className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
+        <div className="flex items-center space-x-2">
+          {selectedDeviceId && onDeviceSelect && (
+            <button
+              onClick={() => onDeviceSelect(null)}
+              className="btn-secondary text-sm"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <span>{isLoading ? '更新中...' : '更新'}</span>
-          </button>
-        )}
+              選択解除
+            </button>
+          )}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="btn-secondary flex items-center space-x-2"
+            >
+              <svg 
+                className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{isLoading ? '更新中...' : '更新'}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -273,14 +311,20 @@ const DeviceList = ({
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {typeDevices.map(device => (
-                  <DeviceCard
+                  <div
                     key={device.deviceId}
-                    device={device}
-                    onControl={handleControl}
-                    onStatusUpdate={handleStatusUpdate}
-                    onTest={handleTest}
-                    isControlling={controllingDevices.has(device.deviceId)}
-                  />
+                    ref={selectedDeviceId === device.deviceId ? selectedDeviceRef : null}
+                  >
+                    <DeviceCard
+                      device={device}
+                      onControl={handleControl}
+                      onStatusUpdate={handleStatusUpdate}
+                      onTest={handleTest}
+                      isControlling={controllingDevices.has(device.deviceId)}
+                      isSelected={selectedDeviceId === device.deviceId}
+                      irDeviceStates={irDeviceStates}
+                    />
+                  </div>
                 ))}
               </div>
             </div>

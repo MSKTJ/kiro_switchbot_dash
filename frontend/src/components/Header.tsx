@@ -1,6 +1,13 @@
 import { useState } from 'react';
 
-const Header = () => {
+type ActiveView = 'dashboard' | 'devices' | 'settings';
+
+interface HeaderProps {
+  activeView: ActiveView;
+  onViewChange: (view: ActiveView) => void;
+}
+
+const Header = ({ activeView, onViewChange }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -25,24 +32,36 @@ const Header = () => {
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a 
-              href="#dashboard" 
-              className="text-primary-400 hover:text-primary-300 transition-colors font-medium border-b-2 border-primary-400 pb-1"
+            <button 
+              onClick={() => onViewChange('dashboard')}
+              className={`transition-colors font-medium pb-1 ${
+                activeView === 'dashboard'
+                  ? 'text-primary-400 hover:text-primary-300 border-b-2 border-primary-400'
+                  : 'text-gray-300 hover:text-white'
+              }`}
             >
               ダッシュボード
-            </a>
-            <a 
-              href="#devices" 
-              className="text-gray-300 hover:text-white transition-colors font-medium"
+            </button>
+            <button 
+              onClick={() => onViewChange('devices')}
+              className={`transition-colors font-medium pb-1 ${
+                activeView === 'devices'
+                  ? 'text-primary-400 hover:text-primary-300 border-b-2 border-primary-400'
+                  : 'text-gray-300 hover:text-white'
+              }`}
             >
               デバイス
-            </a>
-            <a 
-              href="#settings" 
-              className="text-gray-300 hover:text-white transition-colors font-medium"
+            </button>
+            <button 
+              onClick={() => onViewChange('settings')}
+              className={`transition-colors font-medium pb-1 ${
+                activeView === 'settings'
+                  ? 'text-primary-400 hover:text-primary-300 border-b-2 border-primary-400'
+                  : 'text-gray-300 hover:text-white'
+              }`}
             >
               設定
-            </a>
+            </button>
             <div className="flex items-center space-x-2 ml-4">
               <div className="w-2 h-2 bg-success-400 rounded-full animate-pulse"></div>
               <span className="text-xs text-gray-400">オンライン</span>
@@ -69,27 +88,39 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-700 py-4">
             <nav className="flex flex-col space-y-4">
-              <a 
-                href="#dashboard" 
-                className="text-primary-400 font-medium px-2 py-1"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button 
+                onClick={() => {
+                  onViewChange('dashboard');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-left px-2 py-1 font-medium ${
+                  activeView === 'dashboard' ? 'text-primary-400' : 'text-gray-300 hover:text-white'
+                } transition-colors`}
               >
                 ダッシュボード
-              </a>
-              <a 
-                href="#devices" 
-                className="text-gray-300 hover:text-white transition-colors px-2 py-1"
-                onClick={() => setIsMobileMenuOpen(false)}
+              </button>
+              <button 
+                onClick={() => {
+                  onViewChange('devices');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-left px-2 py-1 font-medium ${
+                  activeView === 'devices' ? 'text-primary-400' : 'text-gray-300 hover:text-white'
+                } transition-colors`}
               >
                 デバイス
-              </a>
-              <a 
-                href="#settings" 
-                className="text-gray-300 hover:text-white transition-colors px-2 py-1"
-                onClick={() => setIsMobileMenuOpen(false)}
+              </button>
+              <button 
+                onClick={() => {
+                  onViewChange('settings');
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-left px-2 py-1 font-medium ${
+                  activeView === 'settings' ? 'text-primary-400' : 'text-gray-300 hover:text-white'
+                } transition-colors`}
               >
                 設定
-              </a>
+              </button>
               <div className="flex items-center space-x-2 px-2 py-1">
                 <div className="w-2 h-2 bg-success-400 rounded-full animate-pulse"></div>
                 <span className="text-xs text-gray-400">システム状態: オンライン</span>

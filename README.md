@@ -13,7 +13,11 @@ SwitchBot Hub 2を活用したスマートホーム環境の監視・制御ダ�
   - 明るさプリセットボタン（25%, 50%, 75%, 100%）
   - リアルタイム制御フィードバック
   - 複数照明デバイスの一括管理
-- ❄️ エアコン制御
+- ❄️ **エアコン制御機能**
+  - 電源ON/OFFトグルスイッチ
+  - 運転モード選択（冷房・暖房・除湿・自動・送風）
+  - 温度設定（16-30°C、ボタン/スライダー/プリセット）
+  - IRデバイス対応（制限事項あり）
 - 🎛️ デバイス管理
   - デバイス状態監視
   - 接続テスト機能
@@ -81,6 +85,32 @@ npm run dev
 - `POST /api/devices/:deviceId/light/toggle` - 電源トグル
 - `POST /api/devices/:deviceId/light/power` - 電源設定（on/off）
 - `POST /api/devices/:deviceId/light/brightness` - 明るさ設定（0-100）
+
+### 5. エアコン制御機能の使用方法
+
+1. ダッシュボードの「エアコン制御」タブをクリック
+2. 制御したいエアコンデバイスを選択
+3. 以下の操作が可能：
+   - **電源制御**: ON/OFFボタンまたはトグルスイッチ
+   - **運転モード**: 冷房・暖房・除湿・自動・送風
+   - **温度設定**: 16-30°C（ボタン/スライダー/プリセット）
+
+#### エアコン制御API エンドポイント
+
+- `POST /api/devices/:deviceId/aircon/toggle` - 電源トグル
+- `POST /api/devices/:deviceId/aircon/power` - 電源設定（on/off）
+- `POST /api/devices/:deviceId/aircon/mode` - 運転モード設定
+- `POST /api/devices/:deviceId/aircon/temperature` - 温度設定
+
+#### IRデバイス制御の制限事項
+
+**重要**: IRエアコンデバイスでは以下の制限があります：
+
+- **実際の制御**: 電源ON/OFFのみ送信される
+- **表示更新**: モード・温度変更は画面上でのみ反映
+- **推奨**: 詳細な制御にはSwitchBotアプリを使用してください
+
+この制限は、SwitchBot APIのIRデバイス制御の仕様によるものです。IRデバイスでは学習したコマンドのみが利用可能で、汎用的なモード・温度制御コマンドは多くの場合サポートされていません。
 
 ## SwitchBot API設定
 

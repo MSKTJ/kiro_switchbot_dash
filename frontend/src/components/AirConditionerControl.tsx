@@ -183,7 +183,7 @@ const AirConditionerControl = ({
           <span className="text-2xl">❄️</span>
           <div>
             <h3 className="font-medium text-white">{device.deviceName}</h3>
-            <p className="text-sm text-gray-400">エアコンデバイス</p>
+            <p className="text-sm text-gray-400">IRエアコンデバイス</p>
           </div>
         </div>
         <div className={`text-xs px-2 py-1 rounded ${
@@ -194,6 +194,22 @@ const AirConditionerControl = ({
           {device.status === 'online' ? 'オンライン' : 'オフライン'}
         </div>
       </div>
+
+      {/* IR Device Limitation Notice */}
+      {device.isInfraredRemote && (
+        <div className="bg-orange-900 border border-orange-700 text-orange-300 p-3 rounded-lg text-sm">
+          <div className="flex items-start space-x-2">
+            <span className="text-orange-400">📡</span>
+            <div>
+              <p className="font-medium">IR機器の動作について</p>
+              <p className="text-xs mt-1">
+                このエアコンはIR（赤外線）制御です。モードや温度の変更は画面上で反映されますが、
+                実際のエアコンへの制御は電源ON/OFFのみ送信されます。詳細な制御にはSwitchBotアプリまたはリモコンをご利用ください。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Feedback Message */}
       {feedback && (
@@ -282,8 +298,11 @@ const AirConditionerControl = ({
               className={`p-2 rounded text-xs font-medium transition-colors flex flex-col items-center space-y-1 ${
                 currentMode === mode
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : device.isInfraredRemote 
+                    ? 'bg-orange-700 text-orange-300 hover:bg-orange-600'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               } ${isControlling || disabled || !isPoweredOn ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={device.isInfraredRemote ? 'IR機器：表示のみ更新されます（実際の制御は制限されています）' : ''}
             >
               <span className="text-lg">{modeIcons[mode]}</span>
               <span>{modeNames[mode]}</span>
@@ -304,28 +323,38 @@ const AirConditionerControl = ({
           <button
             onClick={() => handleTemperatureAdjust(-1)}
             disabled={isControlling || disabled || !isPoweredOn || currentTemperature <= 16}
-            className={`w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-colors ${
-              isControlling || disabled || !isPoweredOn || currentTemperature <= 16 
+            className={`w-10 h-10 rounded-full font-bold text-lg transition-colors ${
+              device.isInfraredRemote 
+                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            } ${
+              isControlling || disabled || !isPoweredOn || currentTemperature <= 16
                 ? 'opacity-50 cursor-not-allowed' 
                 : ''
             }`}
+            title={device.isInfraredRemote ? 'IR機器：表示のみ更新されます（実際の制御は制限されています）' : ''}
           >
             -
           </button>
           
           <div className="text-center">
             <div className="text-2xl font-bold text-white">{currentTemperature}°C</div>
-            <div className="text-xs text-gray-400">設定温度</div>
+            <div className="text-xs text-gray-400">{device.isInfraredRemote ? '表示温度' : '設定温度'}</div>
           </div>
           
           <button
             onClick={() => handleTemperatureAdjust(1)}
             disabled={isControlling || disabled || !isPoweredOn || currentTemperature >= 30}
-            className={`w-10 h-10 rounded-full bg-red-600 text-white font-bold text-lg hover:bg-red-700 transition-colors ${
-              isControlling || disabled || !isPoweredOn || currentTemperature >= 30 
+            className={`w-10 h-10 rounded-full font-bold text-lg transition-colors ${
+              device.isInfraredRemote 
+                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                : 'bg-red-600 text-white hover:bg-red-700'
+            } ${
+              isControlling || disabled || !isPoweredOn || currentTemperature >= 30
                 ? 'opacity-50 cursor-not-allowed' 
                 : ''
             }`}
+            title={device.isInfraredRemote ? 'IR機器：表示のみ更新されます（実際の制御は制限されています）' : ''}
           >
             +
           </button>
@@ -343,6 +372,7 @@ const AirConditionerControl = ({
             className={`w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider ${
               isControlling || disabled || !isPoweredOn ? 'opacity-50 cursor-not-allowed' : ''
             }`}
+            title={device.isInfraredRemote ? 'IR機器：表示のみ更新されます（実際の制御は制限されています）' : ''}
             style={{
               background: isPoweredOn 
                 ? `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((currentTemperature - 16) / 14) * 100}%, #374151 ${((currentTemperature - 16) / 14) * 100}%, #374151 100%)`
@@ -359,9 +389,12 @@ const AirConditionerControl = ({
                 disabled={isControlling || disabled || !isPoweredOn}
                 className={`px-2 py-1 rounded text-xs transition-colors ${
                   currentTemperature === temperature
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? device.isInfraredRemote ? 'bg-orange-600 text-white' : 'bg-blue-600 text-white'
+                    : device.isInfraredRemote 
+                      ? 'bg-orange-700 text-orange-300 hover:bg-orange-600'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                 } ${isControlling || disabled || !isPoweredOn ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={device.isInfraredRemote ? 'IR機器：表示のみ更新されます（実際の制御は制限されています）' : ''}
               >
                 {temperature}°C
               </button>

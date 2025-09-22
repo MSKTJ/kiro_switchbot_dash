@@ -145,16 +145,22 @@ export const useDevices = () => {
     command: string,
     parameter?: any
   ): Promise<boolean> => {
+    console.log(`useDevices: Controlling device ${deviceId}: ${command}`, parameter);
+    
     try {
+      const requestBody = { command, parameter };
+      console.log(`useDevices: API request body:`, requestBody);
+      
       const response = await fetch(`/api/devices/${deviceId}/control`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ command, parameter })
+        body: JSON.stringify(requestBody)
       });
 
       const result: ApiResponse<any> = await response.json();
+      console.log(`useDevices: API response for ${deviceId}:`, result);
 
       if (!response.ok) {
         throw new Error(result.error || `HTTP error! status: ${response.status}`);
@@ -166,6 +172,7 @@ export const useDevices = () => {
 
       // Update device status after successful control
       setTimeout(() => {
+        console.log(`useDevices: Updating device status for ${deviceId}`);
         updateDeviceStatus(deviceId);
       }, 1000);
 

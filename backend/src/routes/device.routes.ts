@@ -738,7 +738,7 @@ router.post('/:deviceId/aircon/temperature', async (req: Request, res: Response)
     }
     
     // Set target temperature
-    await deviceService.controlDevice(deviceId, 'setTemperature', temperature.toString());
+    await deviceService.controlDevice(deviceId, 'setTemperature', temperature);
     
     res.json({
       success: true,

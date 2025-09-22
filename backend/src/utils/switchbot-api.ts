@@ -191,10 +191,10 @@ export class SwitchBotAPI {
   /**
    * Control light device
    */
-  async controlLight(deviceId: string, action: 'turnOn' | 'turnOff' | 'setBrightness', brightness?: number): Promise<DeviceCommandResponse> {
+  async controlLight(deviceId: string, action: 'turnOn' | 'turnOff' | 'setBrightness' | 'setColorTemperature', brightness?: number, colorTemperature?: number): Promise<DeviceCommandResponse> {
     try {
       let command: string;
-      let parameter: string | undefined;
+      let parameter: string | object | undefined;
 
       switch (action) {
         case 'turnOn':
@@ -209,6 +209,16 @@ export class SwitchBotAPI {
           }
           command = 'setBrightness';
           parameter = brightness.toString();
+          break;
+        case 'setColorTemperature':
+          if (colorTemperature === undefined || colorTemperature < 2700 || colorTemperature > 6500) {
+            throw new SwitchBotAPIError('Color temperature must be between 2700K and 6500K');
+          }
+          // SwitchBot APIでは色温度制御に'setColor'コマンドを使用
+          command = 'setColor';
+          parameter = {
+            temperature: colorTemperature
+          };
           break;
         default:
           throw new SwitchBotAPIError(`Unknown light action: ${action}`);
@@ -235,7 +245,7 @@ export class SwitchBotAPI {
     deviceId: string,
     action: 'turnOn' | 'turnOff' | 'setMode' | 'setTemperature',
     options?: {
-      mode?: 'cool' | 'heat' | 'dry' | 'auto';
+      mode?: 'cool' | 'heat' | 'dry' | 'auto' | 'fan';
       temperature?: number;
     }
   ): Promise<DeviceCommandResponse> {
@@ -254,25 +264,16 @@ export class SwitchBotAPI {
           if (!options?.mode) {
             throw new SwitchBotAPIError('Mode is required for setMode action');
           }
-          command = 'setAll';
-          parameter = {
-            temperature: options.temperature || 25,
-            mode: options.mode,
-            fanSpeed: 'auto',
-            power: 'on'
-          };
+          // For IR AC, mode is the command itself
+          command = options.mode;
           break;
         case 'setTemperature':
           if (!options?.temperature || options.temperature < 16 || options.temperature > 30) {
             throw new SwitchBotAPIError('Temperature must be between 16 and 30 degrees');
           }
+          // For IR AC, use setAll command with temperature parameter
           command = 'setAll';
-          parameter = {
-            temperature: options.temperature,
-            mode: options.mode || 'auto',
-            fanSpeed: 'auto',
-            power: 'on'
-          };
+          parameter = `${options.temperature},1,1`; // temp,mode,fanSpeed
           break;
         default:
           throw new SwitchBotAPIError(`Unknown air conditioner action: ${action}`);
